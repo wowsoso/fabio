@@ -57,6 +57,7 @@ type Proxy struct {
 	TLSHeaderValue        string
 	GZIPContentTypes      *regexp.Regexp
 	LogRoutes             string
+	Username              string
 }
 
 type Runtime struct {

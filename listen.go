@@ -22,13 +22,13 @@ func init() {
 }
 
 // startListeners runs one or more listeners for the handler
-func startListeners(listen []config.Listen, wait time.Duration, h http.Handler, tcph proxy.TCPProxy) {
-	for _, l := range listen {
+func startListeners(listen []config.Listen, wait time.Duration, h http.Handler, tcph proxy.TCPProxy, listeners []net.Listener) {
+	for i, l := range listen {
 		switch l.Proto {
 		case "tcp+sni":
-			go listenAndServeTCP(l, tcph)
+			go listenAndServeTCP(l, tcph, listeners[i])
 		case "http", "https":
-			go listenAndServeHTTP(l, h)
+			go listenAndServeHTTP(l, h, listeners[i])
 		default:
 			panic("invalid protocol: " + l.Proto)
 		}
@@ -46,11 +46,13 @@ func startListeners(listen []config.Listen, wait time.Duration, h http.Handler, 
 	log.Print("[INFO] Down")
 }
 
-func listenAndServeTCP(l config.Listen, h proxy.TCPProxy) {
+func listenAndServeTCP(l config.Listen, h proxy.TCPProxy, ln net.Listener) {
 	log.Print("[INFO] TCP+SNI proxy listening on ", l.Addr)
-	ln, err := net.Listen("tcp", l.Addr)
-	if err != nil {
-		exit.Fatal("[FATAL] ", err)
+	if ln == nil {
+		var err error
+		if ln, err = net.Listen("tcp", l.Addr); err != nil {
+			exit.Fatal("[FATAL] ", err)
+		}
 	}
 	ln = &proxyproto.Listener{Listener: tcpKeepAliveListener{ln.(*net.TCPListener)}}
 	defer ln.Close()
@@ -75,7 +77,7 @@ func listenAndServeTCP(l config.Listen, h proxy.TCPProxy) {
 	}
 }
 
-func listenAndServeHTTP(l config.Listen, h http.Handler) {
+func listenAndServeHTTP(l config.Listen, h http.Handler, ln net.Listener) {
 	srv := &http.Server{
 		Handler:      h,
 		Addr:         l.Addr,
@@ -104,15 +106,16 @@ func listenAndServeHTTP(l config.Listen, h http.Handler) {
 		log.Printf("[INFO] HTTP proxy listening on %s", l.Addr)
 	}
 
-	if err := serve(srv); err != nil {
+	if err := serve(ln, srv); err != nil {
 		exit.Fatal("[FATAL] ", err)
 	}
 }
 
-func serve(srv *http.Server) error {
-	ln, err := net.Listen("tcp", srv.Addr)
-	if err != nil {
-		exit.Fatal("[FATAL] ", err)
+func serve(ln net.Listener, srv *http.Server) (err error) {
+	if ln == nil {
+		if ln, err = net.Listen("tcp", srv.Addr); err != nil {
+			exit.Fatal("[FATAL] ", err)
+		}
 	}
 
 	ln = &proxyproto.Listener{Listener: tcpKeepAliveListener{ln.(*net.TCPListener)}}

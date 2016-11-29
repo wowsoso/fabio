@@ -8,9 +8,13 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
+	"os/user"
 	"runtime"
 	"runtime/debug"
+	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/eBay/fabio/admin"
 	"github.com/eBay/fabio/config"
@@ -45,9 +49,32 @@ func main() {
 		return
 	}
 
+	listeners := make([]net.Listener, len(cfg.Listen))
+	if cfg.Proxy.Username != "" {
+		if os.Getuid() == 0 {
+			drop(cfg)
+			return
+		}
+
+		for i, l := range cfg.Listen {
+			fd := uintptr(3 + i)
+			ln, err := net.FileListener(os.NewFile(fd, "fabio-"+l.Addr))
+			if err != nil {
+				log.Fatalf("[FATAL] Failed to open socket %d for %s. %s", fd, l.Addr, err)
+			}
+			listeners[i] = ln
+		}
+	}
+
+	u, err := user.Current()
+	if err != nil {
+		log.Fatalf("[FATAL] Cannot determine current user. %s", err)
+	}
+
 	log.Printf("[INFO] Runtime config\n" + toJSON(cfg))
 	log.Printf("[INFO] Version %s starting", version)
 	log.Printf("[INFO] Go runtime is %s", runtime.Version())
+	log.Printf("[INFO] Running as user %s uid=%s gid=%s", u.Username, u.Uid, u.Gid)
 
 	exit.Listen(func(s os.Signal) {
 		if registry.Default == nil {
@@ -68,8 +95,66 @@ func main() {
 	// create proxies after metrics since they use the metrics registry.
 	httpProxy := newHTTPProxy(cfg)
 	tcpProxy := proxy.NewTCPSNIProxy(cfg.Proxy)
-	startListeners(cfg.Listen, cfg.Proxy.ShutdownWait, httpProxy, tcpProxy)
+	startListeners(cfg.Listen, cfg.Proxy.ShutdownWait, httpProxy, tcpProxy, listeners)
 	exit.Wait()
+}
+
+// drop spawns all the listeners and then drops privileges by
+// starting fabio as a different user.
+func drop(cfg *config.Config) {
+	log.Printf("[INFO] root: fabio started as root")
+
+	u, err := user.Lookup(cfg.Proxy.Username)
+	if err != nil {
+		log.Fatalf("[FATAL] root: Unknown user %s. %s", cfg.Proxy.Username, err)
+	}
+
+	listen := func(addr string) (*os.File, error) {
+		ln, err := net.Listen("tcp", addr)
+		if err != nil {
+			return nil, err
+		}
+		return ln.(*net.TCPListener).File()
+	}
+
+	// open sockets and then then re-exec as different user
+	var sockets []*os.File
+	for _, l := range cfg.Listen {
+		f, err := listen(l.Addr)
+		if err != nil {
+			for _, f := range sockets {
+				f.Close()
+			}
+			log.Fatalf("[FATAL] root: Cannot listen on %s. %s", l.Addr, err)
+		}
+		sockets = append(sockets, f)
+		log.Printf("[INFO] root: Listening on %s", l.Addr)
+	}
+
+	atoi := func(s string) uint32 {
+		n, _ := strconv.Atoi(s)
+		return uint32(n)
+	}
+
+	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.ExtraFiles = sockets
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Credential: &syscall.Credential{
+			Uid: atoi(u.Uid),
+			Gid: atoi(u.Gid),
+		},
+		Setsid: true,
+	}
+
+	if err := cmd.Start(); err != nil {
+		log.Fatalf("[FATAL] root: Failed to start fabio as user %s", cfg.Proxy.Username)
+	}
+	log.Printf("[INFO] root: Started fabio as user %s. Exiting", cfg.Proxy.Username)
+
+	cmd.Process.Release()
+	os.Exit(0)
 }
 
 func newHTTPProxy(cfg *config.Config) http.Handler {

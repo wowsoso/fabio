@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -43,7 +44,7 @@ func TestGracefulShutdown(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		startListeners([]config.Listen{l}, 250*time.Millisecond, proxy.NewHTTPProxy(http.DefaultTransport, config.Proxy{}), nil)
+		startListeners([]config.Listen{l}, 250*time.Millisecond, proxy.NewHTTPProxy(http.DefaultTransport, config.Proxy{}), nil, []net.Listener{nil})
 	}()
 
 	// trigger shutdown after some time
