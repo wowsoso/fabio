@@ -91,9 +91,20 @@ func TestLoad(t *testing.T) {
 			},
 		},
 		{
-			args: []string{"-proxy.addr", ":5555;rt=1s;wt=2s"},
+			desc: "-proxy.addr with tls configs",
+			args: []string{"-proxy.addr", `:5555;rt=1s;wt=2s;tlsmin=0x0300;tlsmax=0x305;tlsciphers="0x123,0x456"`},
 			cfg: func(cfg *Config) *Config {
-				cfg.Listen = []Listen{{Addr: ":5555", Proto: "http", ReadTimeout: 1 * time.Second, WriteTimeout: 2 * time.Second}}
+				cfg.Listen = []Listen{
+					{
+						Addr:          ":5555",
+						Proto:         "http",
+						ReadTimeout:   1 * time.Second,
+						WriteTimeout:  2 * time.Second,
+						TLSMinVersion: 0x300,
+						TLSMaxVersion: 0x305,
+						TLSCiphers:    []uint16{0x123, 0x456},
+					},
+				}
 				return cfg
 			},
 		},

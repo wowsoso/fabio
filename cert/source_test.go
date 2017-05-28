@@ -408,7 +408,7 @@ func TestVaultSource(t *testing.T) {
 // server.
 func testSource(t *testing.T, source Source, rootCAs *x509.CertPool, sleep time.Duration) {
 	const NoStrictMatch = false
-	srvConfig, err := TLSConfig(source, NoStrictMatch)
+	srvConfig, err := TLSConfig(source, NoStrictMatch, 0, 0, nil)
 	if err != nil {
 		t.Fatalf("TLSConfig: got %q want nil", err)
 	}

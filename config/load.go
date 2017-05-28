@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -325,6 +326,24 @@ func parseListen(cfg map[string]string, cs map[string]CertSource, readTimeout, w
 			}
 		case "strictmatch":
 			l.StrictMatch = (v == "true")
+		case "tlsmin":
+			n, err := parseUint16(v)
+			if err != nil {
+				return Listen{}, err
+			}
+			l.TLSMinVersion = n
+		case "tlsmax":
+			n, err := parseUint16(v)
+			if err != nil {
+				return Listen{}, err
+			}
+			l.TLSMaxVersion = n
+		case "tlsciphers":
+			c, err := parseUint16s(v)
+			if err != nil {
+				return Listen{}, err
+			}
+			l.TLSCiphers = c
 		}
 	}
 
@@ -342,6 +361,29 @@ func parseListen(cfg map[string]string, cs map[string]CertSource, readTimeout, w
 	}
 
 	return
+}
+
+func parseUint16(s string) (uint16, error) {
+	n, err := strconv.ParseUint(s, 0, 32)
+	if err != nil {
+		return 0, err
+	}
+	if n > 1<<16 {
+		return 0, fmt.Errorf("%d out of range: [0..65535]", n)
+	}
+	return uint16(n), nil
+}
+
+func parseUint16s(s string) ([]uint16, error) {
+	var c []uint16
+	for _, v := range strings.Split(s, ",") {
+		n, err := parseUint16(v)
+		if err != nil {
+			return nil, err
+		}
+		c = append(c, n)
+	}
+	return c, nil
 }
 
 func parseCertSources(cfgs string) (cs map[string]CertSource, err error) {

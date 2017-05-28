@@ -199,7 +199,7 @@ func makeTLSConfig(l config.Listen) *tls.Config {
 	if err != nil {
 		exit.Fatalf("[FATAL] Failed to create cert source %s. %s", l.CertSource.Name, err)
 	}
-	tlscfg, err := cert.TLSConfig(src, l.StrictMatch)
+	tlscfg, err := cert.TLSConfig(src, l.StrictMatch, l.TLSMinVersion, l.TLSMaxVersion, l.TLSCiphers)
 	if err != nil {
 		exit.Fatalf("[FATAL] Failed to create TLS config for cert source %s. %s", l.CertSource.Name, err)
 	}
