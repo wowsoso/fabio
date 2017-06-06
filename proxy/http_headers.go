@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/fabiolb/fabio/config"
+	"github.com/wowsoso/fabioz/config"
 )
 
 // addHeaders adds/updates headers in request

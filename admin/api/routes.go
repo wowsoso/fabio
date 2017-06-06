@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/fabiolb/fabio/route"
+	"github.com/wowsoso/fabioz/route"
 )
 
 type RoutesHandler struct{}

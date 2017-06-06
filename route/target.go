@@ -3,7 +3,7 @@ package route
 import (
 	"net/url"
 
-	"github.com/fabiolb/fabio/metrics"
+	"github.com/wowsoso/fabioz/metrics"
 )
 
 type Target struct {

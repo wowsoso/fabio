@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fabiolb/fabio/config"
+	"github.com/wowsoso/fabioz/config"
 	"github.com/hashicorp/consul/api"
 )
 

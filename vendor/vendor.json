@@ -3,6 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
+			"path": "all",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "eAall4ACaMG40mzSJ5Oc95GiF1A=",
 			"path": "github.com/armon/go-proxyproto",
 			"revision": "609d6338d3a76ec26ac3fe7045a164d9a58436e7",
@@ -243,5 +247,5 @@
 			"revisionTime": "2015-10-20T22:50:55Z"
 		}
 	],
-	"rootPath": "github.com/fabiolb/fabio"
+	"rootPath": "github.com/wowsoso/fabioz"
 }

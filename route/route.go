@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/fabiolb/fabio/metrics"
+	"github.com/wowsoso/fabioz/metrics"
 )
 
 // Route maps a path prefix to one or more target URLs.

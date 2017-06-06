@@ -18,10 +18,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fabiolb/fabio/config"
-	"github.com/fabiolb/fabio/logger"
-	"github.com/fabiolb/fabio/proxy/internal"
-	"github.com/fabiolb/fabio/route"
+	"github.com/wowsoso/fabioz/config"
+	"github.com/wowsoso/fabioz/logger"
+	"github.com/wowsoso/fabioz/proxy/internal"
+	"github.com/wowsoso/fabioz/route"
 	"github.com/pascaldekloe/goe/verify"
 )
 

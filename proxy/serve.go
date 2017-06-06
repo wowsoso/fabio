@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fabiolb/fabio/config"
-	"github.com/fabiolb/fabio/proxy/tcp"
+	"github.com/wowsoso/fabioz/config"
+	"github.com/wowsoso/fabioz/proxy/tcp"
 )
 
 type Server interface {

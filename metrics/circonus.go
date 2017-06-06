@@ -9,7 +9,7 @@ import (
 	"time"
 
 	cgm "github.com/circonus-labs/circonus-gometrics"
-	"github.com/fabiolb/fabio/config"
+	"github.com/wowsoso/fabioz/config"
 )
 
 var (
